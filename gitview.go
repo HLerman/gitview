@@ -48,10 +48,18 @@ func checkBinExists(bin string) {
 	}
 }
 
+type Git struct {
+	branch string
+	diff []string
+	status string
+}
+
+type Repository map[string]*Git
+
 func main() {
 	checkBinExists("git")
-	// gitRepository["path"] = "branch"
-	gitRepository := make(map[string]string)
+
+	gitRepositories := make(Repository)
 
 	err := filepath.Walk("/", func(path string, info os.FileInfo, err error) error {
 		// Cannot read the path -> skip
@@ -81,7 +89,10 @@ func main() {
 					// Rewrite path
 					path = getRootGitFolderFromHeadFile(path)
 					// Add the branch into gitRepository[path]
-					gitRepository[path] = res[0][1]
+
+					var content Git
+					content.branch = res[0][1]
+					gitRepositories[path] = &content
 				}
 			}
 		}
@@ -95,7 +106,10 @@ func main() {
 	}
 
 	// git --git-dir=/path/.git --work-tree=/path/ status --porcelain
-	for key, value := range gitRepository {
+	for key := range gitRepositories {
+		var content Git
+		content.branch = gitRepositories[key].branch
+		// Git status
 		cmdName := "git"
 		cmdArgs := []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "status", "--porcelain"}
 
@@ -103,27 +117,70 @@ func main() {
 		out, err := exec.Command(cmdName, cmdArgs...).Output();
 
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "There was an error running git status command: ", err)
+			fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
 			os.Exit(1)
-		}
-
-		// Display git path + current branch
-		fmt.Print(key)
-		if value == "master" {
-			color.Green(" GIT[" + value + "]")
-		} else {
-			color.Yellow(" GIT[" + value + "]")
 		}
 
 		// Unicode
 		sha := string(out)
 
-		result := strings.Split(sha, "\n")
+
+		// Git remote show origin
+		cmdArgs = []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "remote", "show", "origin"}
+
+		// Execute git command
+		out, err = exec.Command(cmdName, cmdArgs...).Output();
+
+		if err != nil {
+			//fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
+			content.status = "connection failed"
+			gitRepositories[key] = &content
+			continue
+			//os.Exit(1)
+		}
+
+		content.status = "outdated"
+
+		status := string(out)
+
+		result := strings.Split(status, "\n")
+		for i := 0; i < len(result); i++ {
+			if match, _ := regexp.MatchString("^\\s*.+\\(up to date\\)", result[i]); match {
+				content.status = "up-to-date"
+			}
+		}
+
+		result = strings.Split(sha, "\n")
 		for i := 0; i < len(result); i++ {
 			if match, _ := regexp.MatchString("^\\s*[MADRCU]", result[i]); match {
-				fmt.Print("  └─ ")
-				color.Blue(sanitizeGitStatus(result[i]))
+				content.diff = append(content.diff, sanitizeGitStatus(result[i]))
 			}
+		}
+
+		gitRepositories[key] = &content
+	}
+
+	for key := range gitRepositories {
+        fmt.Print(key)
+
+		gitBranch := " GIT[" + gitRepositories[key].branch + "]"
+        if gitRepositories[key].branch == "master" {
+			fmt.Printf("%s", color.GreenString(gitBranch))
+        } else {
+			fmt.Printf("%s", color.YellowString(gitBranch))
+        }
+
+		if gitRepositories[key].status == "outdated" {
+			color.Yellow(" " + gitRepositories[key].status)
+		} else if gitRepositories[key].status == "up-to-date" {
+			color.Green(" " + gitRepositories[key].status)
+		} else {
+			color.Red(" " + gitRepositories[key].status)
+		}
+
+		for i := 0; i < len(gitRepositories[key].diff); i++ {
+			fmt.Print("  └─ ")
+			color.Cyan(gitRepositories[key].diff[i])
 		}
 	}
 }
