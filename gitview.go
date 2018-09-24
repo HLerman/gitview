@@ -9,13 +9,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"github.com/fatih/color"
 	"unicode"
+
+	"github.com/fatih/color"
 )
 
 // remove HEAD/.git from the path
 func getRootGitFolderFromHeadFile(path string) string {
-	return string(path[0:len(path)-9])
+	return string(path[0 : len(path)-9])
 }
 
 func sanitizeGitStatus(data string) string {
@@ -30,7 +31,7 @@ func sanitizeGitStatus(data string) string {
 		for i := 2; i < len(data); i++ {
 			// Check if the current iteration is a space
 			if unicode.IsSpace(int32(data[i])) {
-			    newData = newData[0:i] + newData[i+1:len(data)]
+				newData = newData[0:i] + newData[i+1:len(data)]
 			} else {
 				return newData
 			}
@@ -50,7 +51,7 @@ func checkBinExists(bin string) {
 
 type Git struct {
 	branch string
-	diff []string
+	diff   []string
 	status string
 }
 
@@ -67,7 +68,7 @@ func main() {
 			return filepath.SkipDir
 		}
 
-		// Check if the path is a HEAD git file, if yes we can open it 
+		// Check if the path is a HEAD git file, if yes we can open it
 		if match, _ := regexp.MatchString("\\.git\\/HEAD$", path); match && !info.IsDir() {
 			f, err := os.Open(path)
 
@@ -114,7 +115,7 @@ func main() {
 		cmdArgs := []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "status", "--porcelain"}
 
 		// Execute git command
-		out, err := exec.Command(cmdName, cmdArgs...).Output();
+		out, err := exec.Command(cmdName, cmdArgs...).Output()
 
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
@@ -124,12 +125,11 @@ func main() {
 		// Unicode
 		sha := string(out)
 
-
 		// Git remote show origin
 		cmdArgs = []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "remote", "show", "origin"}
 
 		// Execute git command
-		out, err = exec.Command(cmdName, cmdArgs...).Output();
+		out, err = exec.Command(cmdName, cmdArgs...).Output()
 
 		if err != nil {
 			//fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
@@ -161,14 +161,14 @@ func main() {
 	}
 
 	for key := range gitRepositories {
-        fmt.Print(key)
+		fmt.Print(key)
 
 		gitBranch := " GIT[" + gitRepositories[key].branch + "]"
-        if gitRepositories[key].branch == "master" {
+		if gitRepositories[key].branch == "master" {
 			fmt.Printf("%s", color.GreenString(gitBranch))
-        } else {
+		} else {
 			fmt.Printf("%s", color.YellowString(gitBranch))
-        }
+		}
 
 		if gitRepositories[key].status == "outdated" {
 			color.Yellow(" " + gitRepositories[key].status)
