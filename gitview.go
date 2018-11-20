@@ -160,14 +160,44 @@ func main() {
 		gitRepositories[key] = &content
 	}
 
+	lengthFirstColumn := 0;
+	lengthSecondColumn := 0;
+	for key := range gitRepositories {
+		if(len(key) >= lengthFirstColumn) {
+			lengthFirstColumn = len(key);
+		}
+
+		if(len(gitRepositories[key].branch) >= lengthSecondColumn) {
+			lengthSecondColumn = len(gitRepositories[key].branch);
+		}
+	}
+
 	for key := range gitRepositories {
 		fmt.Print(key)
+
+		// Add space to have column
+		if(len(key) < lengthFirstColumn) {
+			space := lengthFirstColumn - len(key);
+
+			for i := 0; i < space; i++ {
+				fmt.Print(" ");
+			}
+		}
 
 		gitBranch := " GIT[" + gitRepositories[key].branch + "]"
 		if gitRepositories[key].branch == "master" {
 			fmt.Printf("%s", color.GreenString(gitBranch))
 		} else {
 			fmt.Printf("%s", color.YellowString(gitBranch))
+		}
+
+		// Add space to have column
+		if(len(gitRepositories[key].branch) < lengthSecondColumn) {
+			space := lengthSecondColumn - len(gitRepositories[key].branch);
+
+			for i := 0; i < space; i++ {
+				fmt.Print(" ");
+			}
 		}
 
 		if gitRepositories[key].status == "outdated" {
