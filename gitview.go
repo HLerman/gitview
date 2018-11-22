@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/fatih/color"
@@ -106,69 +107,26 @@ func main() {
 		log.Println(err)
 	}
 
-	// git --git-dir=/path/.git --work-tree=/path/ status --porcelain
+	// Start Go routine to check repositories
+	var wg sync.WaitGroup
+
 	for key := range gitRepositories {
-		var content Git
-		content.branch = gitRepositories[key].branch
-		// Git status
-		cmdName := "git"
-		cmdArgs := []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "status", "--porcelain"}
-
-		// Execute git command
-		out, err := exec.Command(cmdName, cmdArgs...).Output()
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
-			os.Exit(1)
-		}
-
-		// Unicode
-		sha := string(out)
-
-		// Git remote show origin
-		cmdArgs = []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "remote", "show", "origin"}
-
-		// Execute git command
-		out, err = exec.Command(cmdName, cmdArgs...).Output()
-
-		if err != nil {
-			//fmt.Fprintln(os.Stderr, "There was an error running git command: ", err)
-			content.status = "connection failed"
-			gitRepositories[key] = &content
-			continue
-			//os.Exit(1)
-		}
-
-		content.status = "outdated"
-
-		status := string(out)
-
-		result := strings.Split(status, "\n")
-		for i := 0; i < len(result); i++ {
-			if match, _ := regexp.MatchString("^\\s*.+\\(up to date\\)", result[i]); match {
-				content.status = "up-to-date"
-			}
-		}
-
-		result = strings.Split(sha, "\n")
-		for i := 0; i < len(result); i++ {
-			if match, _ := regexp.MatchString("^\\s*[MADRCU]", result[i]); match {
-				content.diff = append(content.diff, sanitizeGitStatus(result[i]))
-			}
-		}
-
-		gitRepositories[key] = &content
+		wg.Add(1)
+		go processGit(gitRepositories, key, &wg)
 	}
 
-	lengthFirstColumn := 0;
-	lengthSecondColumn := 0;
+	wg.Wait()
+
+	// Check column length
+	lengthFirstColumn := 0
+	lengthSecondColumn := 0
 	for key := range gitRepositories {
-		if(len(key) >= lengthFirstColumn) {
-			lengthFirstColumn = len(key);
+		if len(key) >= lengthFirstColumn {
+			lengthFirstColumn = len(key)
 		}
 
-		if(len(gitRepositories[key].branch) >= lengthSecondColumn) {
-			lengthSecondColumn = len(gitRepositories[key].branch);
+		if len(gitRepositories[key].branch) >= lengthSecondColumn {
+			lengthSecondColumn = len(gitRepositories[key].branch)
 		}
 	}
 
@@ -176,11 +134,11 @@ func main() {
 		fmt.Print(key)
 
 		// Add space to have column
-		if(len(key) < lengthFirstColumn) {
-			space := lengthFirstColumn - len(key);
+		if len(key) < lengthFirstColumn {
+			space := lengthFirstColumn - len(key)
 
 			for i := 0; i < space; i++ {
-				fmt.Print(" ");
+				fmt.Print(" ")
 			}
 		}
 
@@ -192,11 +150,11 @@ func main() {
 		}
 
 		// Add space to have column
-		if(len(gitRepositories[key].branch) < lengthSecondColumn) {
-			space := lengthSecondColumn - len(gitRepositories[key].branch);
+		if len(gitRepositories[key].branch) < lengthSecondColumn {
+			space := lengthSecondColumn - len(gitRepositories[key].branch)
 
 			for i := 0; i < space; i++ {
-				fmt.Print(" ");
+				fmt.Print(" ")
 			}
 		}
 
