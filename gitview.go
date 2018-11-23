@@ -8,38 +8,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
-	"unicode"
 
+	"github.com/alexflint/go-arg"
 	"github.com/fatih/color"
 )
 
-// remove HEAD/.git from the path
-func getRootGitFolderFromHeadFile(path string) string {
-	return string(path[0 : len(path)-9])
-}
-
-func sanitizeGitStatus(data string) string {
-	data = strings.TrimSpace(data)
-	newData := data
-
-	// Check if we have more than 1 space between [MADRCU] and the file/folder
-	// For example : A  test
-	if match, _ := regexp.MatchString("^[MADRCU]\\s{2,}", data); match {
-		// Loop all characters execept the two frist bytes (beacause it's [MADRCU] + space and we
-		// would like to sav 1 space
-		for i := 2; i < len(data); i++ {
-			// Check if the current iteration is a space
-			if unicode.IsSpace(int32(data[i])) {
-				newData = newData[0:i] + newData[i+1:len(data)]
-			} else {
-				return newData
-			}
-		}
-	}
-
-	return data
+var args struct {
+	Pull bool `arg:"--pull" help:"auto git pull"`
 }
 
 // Check if a binary file exists
@@ -59,6 +35,7 @@ type Git struct {
 type Repository map[string]*Git
 
 func main() {
+	arg.MustParse(&args)
 	checkBinExists("git")
 
 	gitRepositories := make(Repository)
@@ -112,7 +89,7 @@ func main() {
 
 	for key := range gitRepositories {
 		wg.Add(1)
-		go processGit(gitRepositories, key, &wg)
+		go gitProcess(gitRepositories, key, &wg)
 	}
 
 	wg.Wait()

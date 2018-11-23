@@ -7,9 +7,10 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"unicode"
 )
 
-func processGit(gitRepositories Repository, key string, wg *sync.WaitGroup) {
+func gitProcess(gitRepositories Repository, key string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var content Git
@@ -59,5 +60,50 @@ func processGit(gitRepositories Repository, key string, wg *sync.WaitGroup) {
 		}
 	}
 
+	if args.Pull {
+		if content.status == "outdated" && len(content.diff) == 0 && content.branch == "master" {
+			// Git pull
+			cmdArgs = []string{"--git-dir=" + key + ".git", "--work-tree=" + key, "pull"}
+
+			// Execute git command
+			_, err = exec.Command(cmdName, cmdArgs...).Output()
+
+			if err != nil {
+				content.status += ", failed to update"
+				gitRepositories[key] = &content
+				return
+			} else {
+				content.status = "up-to-date"
+			}
+		}
+	}
+
 	gitRepositories[key] = &content
+}
+
+// remove HEAD/.git from the path
+func getRootGitFolderFromHeadFile(path string) string {
+	return string(path[0 : len(path)-9])
+}
+
+func sanitizeGitStatus(data string) string {
+	data = strings.TrimSpace(data)
+	newData := data
+
+	// Check if we have more than 1 space between [MADRCU] and the file/folder
+	// For example : A  test
+	if match, _ := regexp.MatchString("^[MADRCU]\\s{2,}", data); match {
+		// Loop all characters execept the two frist bytes (beacause it's [MADRCU] + space and we
+		// would like to sav 1 space
+		for i := 2; i < len(data); i++ {
+			// Check if the current iteration is a space
+			if unicode.IsSpace(int32(data[i])) {
+				newData = newData[0:i] + newData[i+1:len(data)]
+			} else {
+				return newData
+			}
+		}
+	}
+
+	return data
 }
