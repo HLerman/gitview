@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -15,7 +17,16 @@ import (
 )
 
 var args struct {
-	Pull bool `arg:"--pull" help:"auto git pull"`
+	Pull    bool `arg:"--pull" help:"Git pull on all repositories"`
+	Refresh bool `arg:"--refresh" help:"Create json file which contain the repositories path. This Json can be used to avoid searching phase"`
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 // Check if a binary file exists
@@ -78,6 +89,27 @@ func main() {
 
 		return nil
 	})
+
+	// End, write Json file and stop.
+	if args.Refresh {
+		var repositories []string
+
+		for key := range gitRepositories {
+			repositories = append(repositories, key)
+		}
+
+		json, err := json.Marshal(repositories)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		err = ioutil.WriteFile("gitview.json", json, 0644)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		os.Exit(0)
+	}
 
 	// If error during Walk
 	if err != nil {
