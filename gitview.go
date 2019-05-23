@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,16 +8,25 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sync"
 
 	"github.com/alexflint/go-arg"
 	"github.com/fatih/color"
 )
 
+const jsonPath = "gitview.json"
+
 var args struct {
 	Pull    bool `arg:"--pull" help:"Git pull on all repositories"`
 	Refresh bool `arg:"--refresh" help:"Create json file which contain the repositories path. This Json can be used to avoid searching phase"`
+}
+
+func returnStringFromFile(path string) string {
+	dat, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(dat)
 }
 
 func fileExists(filename string) bool {
@@ -51,44 +59,41 @@ func main() {
 
 	gitRepositories := make(Repository)
 
-	err := filepath.Walk("/", func(path string, info os.FileInfo, err error) error {
-		// Cannot read the path -> skip
-		if err != nil {
-			return filepath.SkipDir
+	if fileExists(jsonPath) {
+		jsonString := returnStringFromFile(jsonPath)
+
+		var jsonDecode []string
+		if err := json.Unmarshal([]byte(jsonString), &jsonDecode); err != nil {
+			log.Fatal(err)
 		}
 
-		// Check if the path is a HEAD git file, if yes we can open it
-		if match, _ := regexp.MatchString("\\.git\\/HEAD$", path); match && !info.IsDir() {
-			f, err := os.Open(path)
+		for i := 0; i < len(jsonDecode); i++ {
+			path := jsonDecode[i] + ".git/HEAD"
 
-			// Cannot open the file
+			fileStat, err := os.Stat(path)
 			if err != nil {
-				log.Println(err)
+				log.Fatal(err)
 			}
 
-			// Try to determine the branch
-			scanner := bufio.NewScanner(f)
-			for scanner.Scan() {
-
-				// If the content file is correctly formed
-				if match, _ := regexp.MatchString("^ref: refs\\/heads\\/.+$", scanner.Text()); match {
-					// Get the branch
-					match, _ := regexp.Compile("^ref: refs\\/heads\\/(.+)$")
-					res := match.FindAllStringSubmatch(scanner.Text(), -1)
-
-					// Rewrite path
-					path = getRootGitFolderFromHeadFile(path)
-					// Add the branch into gitRepository[path]
-
-					var content Git
-					content.branch = res[0][1]
-					gitRepositories[path] = &content
-				}
-			}
+			writeRepositoryInformation(path, &gitRepositories, fileStat)
 		}
+	} else {
+		err := filepath.Walk("/", func(path string, info os.FileInfo, err error) error {
+			// Cannot read the path -> skip
+			if err != nil {
+				return filepath.SkipDir
+			}
 
-		return nil
-	})
+			writeRepositoryInformation(path, &gitRepositories, info)
+
+			return nil
+		})
+
+		// If error during Walk
+		if err != nil {
+			log.Println(err)
+		}
+	}
 
 	// End, write Json file and stop.
 	if args.Refresh {
@@ -100,20 +105,15 @@ func main() {
 
 		json, err := json.Marshal(repositories)
 		if err != nil {
-			log.Panic(err)
+			log.Fatal(err)
 		}
 
-		err = ioutil.WriteFile("gitview.json", json, 0644)
+		err = ioutil.WriteFile(jsonPath, json, 0644)
 		if err != nil {
-			log.Panic(err)
+			log.Fatal(err)
 		}
 
 		os.Exit(0)
-	}
-
-	// If error during Walk
-	if err != nil {
-		log.Println(err)
 	}
 
 	// Start Go routine to check repositories

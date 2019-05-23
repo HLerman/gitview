@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -106,4 +108,36 @@ func sanitizeGitStatus(data string) string {
 	}
 
 	return data
+}
+
+func writeRepositoryInformation(path string, gitRepositories *Repository, info os.FileInfo) {
+	// Check if the path is a HEAD git file, if yes we can open it
+	if match, _ := regexp.MatchString("\\.git\\/HEAD$", path); match && !info.IsDir() {
+		f, err := os.Open(path)
+
+		// Cannot open the file
+		if err != nil {
+			log.Println(err)
+		}
+
+		// Try to determine the branch
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+
+			// If the content file is correctly formed
+			if match, _ := regexp.MatchString("^ref: refs\\/heads\\/.+$", scanner.Text()); match {
+				// Get the branch
+				match, _ := regexp.Compile("^ref: refs\\/heads\\/(.+)$")
+				res := match.FindAllStringSubmatch(scanner.Text(), -1)
+
+				// Rewrite path
+				path = getRootGitFolderFromHeadFile(path)
+				// Add the branch into gitRepository[path]
+
+				var content Git
+				content.branch = res[0][1]
+				(*gitRepositories)[path] = &content
+			}
+		}
+	}
 }
