@@ -2,6 +2,8 @@
 
 # gitview
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/67b150d267c2486285b86c3533df996b)](https://app.codacy.com/app/HLerman/gitview?utm_source=github.com&utm_medium=referral&utm_content=HLerman/gitview&utm_campaign=Badge_Grade_Settings)
+
 Gitview is a tool which scan directories to find all of your git repositories and check if they are up-to-date.
 
 ## Prerequisite
