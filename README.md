@@ -2,6 +2,15 @@
 
 Gitview is a tool which scan directories to find all of your git repositories and check if they are up-to-date.
 
+## Prerequisite
+
+To use the application, you need :
+- git
+
+To build the application, you need :
+- git
+- go
+
 ## Installation
 
 Use the [release](https://github.com/HLerman/gitview/releases) page to download the lastest version
@@ -19,6 +28,8 @@ go build
 Display all of your git repositories and check if it's up to date.
 ```bash
 $ ./gitview
+```
+```bash
 /home/user/go/src/github.com/karrick/godirwalk/      GIT[master] outdated
 /home/user/go/src/github.com/sqs/goreturns/          GIT[master] up-to-date
 /home/user/go/src/github.com/uudashr/gopkgs/         GIT[master] up-to-date
@@ -47,6 +58,8 @@ $ ./gitview --refresh
 Equivalent to a git pull in all of your git repositories which use the master branch.
 ```bash
 $ ./gitview --pull
+```
+```bash
 /home/user/go/src/github.com/go-delve/delve/         GIT[master] up-to-date
 /home/user/go/src/github.com/alexflint/go-arg/       GIT[master] up-to-date
 /home/user/go/src/github.com/pkg/errors/             GIT[master] up-to-date
