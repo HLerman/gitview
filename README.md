@@ -1,5 +1,3 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e3204b98fae34fbc9241e35afe713712)](https://www.codacy.com/app/HLerman/gitview?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=HLerman/gitview&amp;utm_campaign=Badge_Grade)
-
 # gitview
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/67b150d267c2486285b86c3533df996b)](https://app.codacy.com/app/HLerman/gitview?utm_source=github.com&utm_medium=referral&utm_content=HLerman/gitview&utm_campaign=Badge_Grade_Settings)
