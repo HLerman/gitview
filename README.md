@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e3204b98fae34fbc9241e35afe713712)](https://www.codacy.com/app/HLerman/gitview?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=HLerman/gitview&amp;utm_campaign=Badge_Grade)
+
 # gitview
 
 Gitview is a tool which scan directories to find all of your git repositories and check if they are up-to-date.
@@ -79,3 +81,6 @@ $ ./gitview --pull
 /home/user/go/src/github.com/sqs/goreturns/          GIT[master] up-to-date
 /home/user/go/src/github.com/sirupsen/logrus/        GIT[master] up-to-date
 ```
+
+## License
+[GNUv3](https://www.gnu.org/licenses/agpl-3.0.fr.html)
