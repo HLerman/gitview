@@ -59,7 +59,7 @@ func main() {
 
 	gitRepositories := make(Repository)
 
-	if fileExists(jsonPath) {
+	if fileExists(jsonPath) && !args.Refresh {
 		jsonString := returnStringFromFile(jsonPath)
 
 		var jsonDecode []string
