@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"unicode"
+
+	"github.com/fatih/color"
 )
 
 func gitProcess(gitRepositories Repository, key string, wg *sync.WaitGroup) {
@@ -110,7 +112,7 @@ func sanitizeGitStatus(data string) string {
 	return data
 }
 
-func writeRepositoryInformation(path string, gitRepositories *Repository, info os.FileInfo) {
+func writeRepositoryInformation(path string, gitRepositories *Repository, info os.FileInfo, display bool) {
 	// Check if the path is a HEAD git file, if yes we can open it
 	if match, _ := regexp.MatchString("\\.git\\/HEAD$", path); match && !info.IsDir() {
 		f, err := os.Open(path)
@@ -137,6 +139,11 @@ func writeRepositoryInformation(path string, gitRepositories *Repository, info o
 				var content Git
 				content.branch = res[0][1]
 				(*gitRepositories)[path] = &content
+
+				if display {
+					fmt.Printf("%s ", color.GreenString("add"))
+					fmt.Println(path)
+				}
 			}
 		}
 	}

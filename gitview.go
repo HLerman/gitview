@@ -37,7 +37,6 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-// Check if a binary file exists
 func checkBinExists(bin string) {
 	if _, err := exec.LookPath(bin); err != nil {
 		log.Println("didn't find '" + bin + "' executable")
@@ -75,7 +74,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			writeRepositoryInformation(path, &gitRepositories, fileStat)
+			writeRepositoryInformation(path, &gitRepositories, fileStat, false)
 		}
 	} else {
 		err := filepath.Walk("/", func(path string, info os.FileInfo, err error) error {
@@ -84,7 +83,7 @@ func main() {
 				return filepath.SkipDir
 			}
 
-			writeRepositoryInformation(path, &gitRepositories, info)
+			writeRepositoryInformation(path, &gitRepositories, info, true)
 
 			return nil
 		})
