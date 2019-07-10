@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sync"
 
@@ -14,11 +15,19 @@ import (
 	"github.com/fatih/color"
 )
 
-const jsonPath = "gitview.json"
-
 var args struct {
 	Pull    bool `arg:"--pull" help:"Git pull on all repositories"`
 	Refresh bool `arg:"--refresh" help:"Create json file which contain the repositories path. This Json can be used to avoid searching phase"`
+}
+
+func getJSONPath() (string, error) {
+	usr, err := user.Current()
+
+	if err != nil {
+		return "", err
+	}
+
+	return usr.HomeDir + "/gitview.json", nil
 }
 
 func returnStringFromFile(path string) string {
@@ -26,6 +35,7 @@ func returnStringFromFile(path string) string {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return string(dat)
 }
 
@@ -44,6 +54,26 @@ func checkBinExists(bin string) {
 	}
 }
 
+func createJSONFile(repositories []string) error {
+	json, err := json.Marshal(repositories)
+
+	if err != nil {
+		return err
+	}
+
+	jsonPath, err := getJSONPath()
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(jsonPath, json, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type Git struct {
 	branch string
 	diff   []string
@@ -57,6 +87,11 @@ func main() {
 	checkBinExists("git")
 
 	gitRepositories := make(Repository)
+
+	jsonPath, err := getJSONPath()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if fileExists(jsonPath) && !args.Refresh {
 		jsonString := returnStringFromFile(jsonPath)
@@ -74,7 +109,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			writeRepositoryInformation(path, &gitRepositories, fileStat, false)
+			writeRepositoryInformation(path, &gitRepositories, fileStat)
 		}
 	} else {
 		err := filepath.Walk("/", func(path string, info os.FileInfo, err error) error {
@@ -83,7 +118,7 @@ func main() {
 				return filepath.SkipDir
 			}
 
-			writeRepositoryInformation(path, &gitRepositories, info, true)
+			writeRepositoryInformation(path, &gitRepositories, info)
 
 			return nil
 		})
@@ -100,14 +135,13 @@ func main() {
 
 		for key := range gitRepositories {
 			repositories = append(repositories, key)
+
+			fmt.Printf("%s ", color.GreenString("add"))
+			fmt.Println(key)
 		}
 
-		json, err := json.Marshal(repositories)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err := createJSONFile(repositories)
 
-		err = ioutil.WriteFile(jsonPath, json, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
