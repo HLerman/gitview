@@ -52,7 +52,7 @@ $ ./gitview
 /home/user/go/src/golang.org/x/tools/                GIT[master] outdated
 ```
 
-Create a json file (gitview.json in the same directory than gitview binary) to sav repositories paths. Improve next standard execution speed (path are already known).
+Create a json file (.gitview.json in the home directory) to sav repositories paths. Improve next standard execution speed (path are already known).
 ```bash
 $ ./gitview --refresh
 ```
