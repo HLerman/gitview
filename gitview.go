@@ -7,12 +7,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"sync"
 
 	"github.com/alexflint/go-arg"
 	"github.com/fatih/color"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 var args struct {
@@ -21,13 +21,12 @@ var args struct {
 }
 
 func getJSONPath() (string, error) {
-	usr, err := user.Current()
-
+	home, err := homedir.Dir()
 	if err != nil {
 		return "", err
 	}
 
-	return usr.HomeDir + "/gitview.json", nil
+	return home + "/.gitview.json", nil
 }
 
 func returnStringFromFile(path string) string {
