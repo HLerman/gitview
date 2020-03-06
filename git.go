@@ -74,9 +74,9 @@ func gitProcess(gitRepositories Repository, key string, wg *sync.WaitGroup) {
 				content.status += ", failed to update"
 				gitRepositories[key] = &content
 				return
-			} else {
-				content.status = "up-to-date"
 			}
+
+			content.status = "up-to-date"
 		}
 	}
 

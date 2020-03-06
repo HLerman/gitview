@@ -73,12 +73,14 @@ func createJSONFile(repositories []string) error {
 	return nil
 }
 
+// Git contain git branch informations
 type Git struct {
 	branch string
 	diff   []string
 	status string
 }
 
+// Repository is an array of Git
 type Repository map[string]*Git
 
 func main() {

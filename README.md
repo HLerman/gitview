@@ -7,11 +7,11 @@ Gitview is a tool which scan directories to find all of your git repositories an
 ## Prerequisite
 
 To use the application, you need :
-- git
+-   git
 
 To build the application, you need :
-- git
-- go
+-   git
+-   go
 
 ## Installation
 
